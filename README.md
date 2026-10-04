@@ -4,7 +4,7 @@ MIT licensed animated ASCII logos for browsers and terminals. Plain JavaScript E
 
 Install: `npm install github:Monstertov/monster-ascii`
 
-[Demo](https://monstertov.github.io/monster-ascii/) (publish this repository with GitHub Pages using the docs directory).
+[Demo](https://monstertov.github.io/monster-ascii/docs/) (publish this repository with GitHub Pages using the docs directory).
 
 ## Browser
 
