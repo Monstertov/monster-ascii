@@ -1,5 +1,11 @@
 # monster-ascii
 
+<p align="center">
+  <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank"><img src="https://custom-icon-badges.demolab.com/badge/JavaScript-F7DF1E?logo=javascript&logoColor=black" alt="JavaScript" /></a>
+  <a href="https://nodejs.org/" target="_blank"><img src="https://custom-icon-badges.demolab.com/badge/Node.js-5FA04E?logo=nodedotjs&logoColor=white" alt="Node.js" /></a>
+  <a href="https://www.npmjs.com/" target="_blank"><img src="https://custom-icon-badges.demolab.com/badge/npm-CB3837?logo=npm&logoColor=white" alt="npm" /></a>
+</p>
+
 MIT licensed animated ASCII logos for browsers and terminals. Plain JavaScript ES modules, no build step and no runtime dependencies. SVG and PNG become selectable character grids. The 3D renderer extrudes the silhouette into a closed surface with front, back and boundary walls, Y rotation, X tilt, Lambert lighting and a z-buffer.
 
 Install: `npm install github:Monstertov/monster-ascii`
