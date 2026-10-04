@@ -1,8 +1,105 @@
-<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>monster-ascii</title>
-<style>body{margin:0;background:#07121d;color:#d5e8f5;font:16px system-ui}main{max-width:1100px;margin:auto;padding:32px}h1{color:#58b5f2}label{display:inline-block;margin:8px}input,select{background:#142c40;color:white;padding:8px;border:1px solid #36566c}section{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}article{padding:20px;background:#102333;border-radius:12px}.logo{height:230px;display:flex;align-items:center;justify-content:center}a{color:#58b5f2}</style>
-<main><h1>monster-ascii</h1><p>Selectable ASCII. Solid 3D. Zero runtime dependencies.</p><label>Columns <input id="width" type="range" min="30" max="100" value="60"></label><label>Speed <input id="speed" type="range" min="0" max="3" step=".1" value="1"></label><label>Color <select id="color"><option value="#0071bc">Monstertov blue</option><option value="#58b5f2">Light blue</option><option value="gradient">Gradient</option><option value="brightness">Brightness</option></select></label><label>Ramp <select id="ramp"><option> .,:;irsXA253hMHGS#9B&amp;@</option><option> .:-=+*#%@</option><option> .oO@</option></select></label><section id="effects"></section><p>Examples: <a href="../examples/loading.html">Loading</a> | <a href="https://github.com/Monstertov/monster-ascii/blob/main/examples/terminal.md">Terminal</a></p><p><a href="https://github.com/Monstertov/monster-ascii">Source and documentation</a></p></main>
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>monster-ascii</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #07121d; color: #d5e8f5; font: 16px system-ui, sans-serif; }
+  main { max-width: 1400px; margin: auto; padding: 24px 32px 32px; }
+  h1 { color: #58b5f2; margin: 0 0 8px; }
+  p { margin: 0 0 20px; }
+  a { color: #58b5f2; }
+  #stage { height: clamp(420px, 82vh, 1000px); display: flex; align-items: center; justify-content: center; overflow: hidden;
+    background: #08131f; border: 1px solid #1c3347; border-radius: 12px; }
+  #stage:fullscreen { height: 100vh; border: 0; border-radius: 0; }
+  .panel { margin-top: 20px; padding: 20px; background: #102333; border-radius: 12px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px 24px; }
+  label, .field { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+  label span { display: flex; justify-content: space-between; }
+  output { color: #8fb4cc; }
+  input, select, button { font: inherit; color: #fff; background: #142c40; padding: 8px; border: 1px solid #36566c; border-radius: 6px; }
+  input[type=range] { padding: 0; accent-color: #58b5f2; }
+  input[type=color] { width: 100%; height: 38px; padding: 2px; }
+  input[type=checkbox] { width: 20px; height: 20px; accent-color: #58b5f2; }
+  .check { flex-direction: row; align-items: center; gap: 10px; }
+  button { cursor: pointer; }
+  button:hover { border-color: #58b5f2; }
+  :focus-visible { outline: 3px solid #58b5f2; outline-offset: 2px; }
+  [hidden] { display: none; }
+  .motion-note { display: none; color: #8fb4cc; }
+  @media (prefers-reduced-motion: reduce) { .motion-note { display: block; } }
+  footer { margin-top: 20px; }
+</style>
+<main>
+  <h1>monster-ascii</h1>
+  <p>Selectable ASCII. Solid 3D. Zero runtime dependencies.</p>
+  <div id="stage"></div>
+  <p class="motion-note">Reduced motion is on, so the animation shows a single frame.</p>
+  <form class="panel" id="controls" onsubmit="return false">
+    <label><span>Text</span><input id="text" value="M" maxlength="24" autocomplete="off" spellcheck="false"></label>
+    <label><span>Effect</span><select id="effect"></select></label>
+    <label><span>Rotation</span><select id="rotation"></select></label>
+    <label><span>Speed <output id="speed-out"></output></span><input id="speed" type="range" min="0" max="4" step="0.1" value="1"></label>
+    <label><span>Depth <output id="depth-out"></output></span><input id="depth" type="range" min="0.04" max="1" step="0.01" value="0.24"></label>
+    <label><span>Light azimuth <output id="azimuth-out"></output></span><input id="azimuth" type="range" min="-180" max="180" step="1" value="-25"></label>
+    <label><span>Light elevation <output id="elevation-out"></output></span><input id="elevation" type="range" min="-90" max="90" step="1" value="27"></label>
+    <label><span>Columns <output id="width-out"></output></span><input id="width" type="range" min="30" max="220" step="1" value="110"></label>
+    <label><span>Font size <output id="fontSize-out"></output></span><input id="fontSize" type="range" min="0" max="40" step="1" value="0"></label>
+    <label><span>FPS cap <output id="fps-out"></output></span><input id="fps" type="range" min="5" max="60" step="1" value="30"></label>
+    <label><span>Ramp</span><select id="preset"></select></label>
+    <label id="custom-field" hidden><span>Custom ramp, dark to bright</span><input id="custom" value=" .:-=+*#%@" spellcheck="false" autocomplete="off"></label>
+    <label><span>Color</span><input id="color" type="color" value="#0071bc"></label>
+    <label><span>Color mode</span><select id="mode"><option value="solid">Solid</option><option value="shaded">Shaded by brightness</option><option value="gradient">Gradient</option></select></label>
+    <label><span>Background</span><input id="background" type="color" value="#08131f"></label>
+    <label class="check"><input id="invert" type="checkbox"><span>Invert</span></label>
+    <div class="field"><span>View</span><button id="fullscreen" type="button">Fullscreen</button></div>
+  </form>
+  <footer>Examples: <a href="../examples/spin.html">Spinning M</a> | <a href="https://github.com/Monstertov/monster-ascii/blob/main/examples/terminal.md">Terminal</a> | <a href="https://github.com/Monstertov/monster-ascii">Source and documentation</a></footer>
+</main>
 <script type="module">
-import {mount} from '../src/web.js';import {effects} from '../src/core.js';
-const handles=[];for(const effect of effects){const article=document.createElement('article'),title=document.createElement('h2'),logo=document.createElement('div');title.textContent=effect;logo.className='logo';logo.dataset.effect=effect;article.append(title,logo);document.querySelector('section').append(article);handles.push(await mount(logo,'./logo.svg',{effect}));}
-for(const id of ['width','speed','color','ramp'])document.getElementById(id).addEventListener('input',()=>{const o={width:+document.getElementById('width').value,speed:+document.getElementById('speed').value,color:document.getElementById('color').value,ramp:document.getElementById('ramp').value};if(o.color==='gradient')o.color=['#0071bc','#b4e2ff'];handles.forEach(h=>h.update(o));});
-</script></html>
+import {mount,textMask} from '../src/web.js';
+import {effects,rotations} from '../src/core.js';
+const $ = id => document.getElementById(id);
+const ramps = {Classic:' .,:;irsXA253hMHGS#9B&@', Minimal:' .:-=+*#%@', Blocks:' ░▒▓█', Dots:' .oO0@', Binary:' 01', Custom:null};
+const fill = (select, names) => names.forEach(n => select.append(new Option(n, n)));
+fill($('effect'), effects); fill($('rotation'), rotations); fill($('preset'), Object.keys(ramps));
+const mix = (hex, to, k) => '#' + [1, 3, 5].map(i => Math.round(parseInt(hex.slice(i, i + 2), 16) * (1 - k) + parseInt(to.slice(i, i + 2), 16) * k).toString(16).padStart(2, '0')).join('');
+const rad = d => d * Math.PI / 180;
+
+function settings() {
+  const color = $('color').value, bg = $('background').value, az = rad(+$('azimuth').value), el = rad(+$('elevation').value);
+  const ramp = $('preset').value === 'Custom' ? $('custom').value : ramps[$('preset').value];
+  return {
+    width: +$('width').value, effect: $('effect').value, rotation: $('rotation').value, speed: +$('speed').value, depth: +$('depth').value,
+    light: [Math.sin(az) * Math.cos(el), -Math.sin(el), Math.cos(az) * Math.cos(el)],
+    ramp: ramp.length >= 2 ? ramp : ' .', invert: $('invert').checked, fps: +$('fps').value,
+    fontSize: +$('fontSize').value || 'fit',
+    color: {solid: color, shaded: [mix(color, bg, .75), color], gradient: [mix(color, '#000000', .45), color, mix(color, '#ffffff', .65)]}[$('mode').value],
+    label: 'Animated ASCII art of ' + ($('text').value || 'M')
+  };
+}
+const maskFor = () => textMask($('text').value, {width: Math.min(360, Math.max(96, Math.round($('width').value * 1.3)))});
+const stage = $('stage'), handle = await mount(stage, maskFor(), settings());
+let maskKey = '';
+function apply(event) {
+  const o = settings(), key = $('text').value + '|' + $('width').value;
+  $('rotation').disabled = o.effect !== 'spin3d'; $('depth').disabled = o.effect !== 'spin3d';
+  $('custom-field').hidden = $('preset').value !== 'Custom';
+  stage.style.background = $('background').value;
+  $('speed-out').value = o.speed.toFixed(1); $('depth-out').value = o.depth.toFixed(2); $('azimuth-out').value = $('azimuth').value + ' deg';
+  $('elevation-out').value = $('elevation').value + ' deg'; $('width-out').value = o.width; $('fps-out').value = o.fps;
+  $('fontSize-out').value = $('fontSize').value === '0' ? 'auto' : $('fontSize').value + ' px';
+  if (key !== maskKey) {maskKey = key; handle.setMask(maskFor());}
+  handle.update(o);
+}
+$('controls').addEventListener('input', apply);
+maskKey = $('text').value + '|' + $('width').value; apply();
+
+const full = $('fullscreen');
+if (!stage.requestFullscreen) full.parentElement.hidden = true;
+full.addEventListener('click', () => document.fullscreenElement ? document.exitFullscreen() : stage.requestFullscreen());
+document.addEventListener('fullscreenchange', () => {full.textContent = document.fullscreenElement ? 'Exit fullscreen' : 'Fullscreen';});
+</script>
+</html>
