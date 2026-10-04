@@ -1,24 +1,32 @@
-<!-- CLI examples using the repository logo. Run from the repository root. -->
+<!-- CLI examples with the built-in M. Run from the repository root. -->
 # Terminal examples
 
-Use Node 20 or later. SVG input also needs `rsvg-convert` from `librsvg2-bin`.
+Use Node 20 or later. Without a file argument the CLI draws the built-in capital M.
+Image files (PNG, or SVG with `rsvg-convert` from `librsvg2-bin`) work the same way.
 Run these commands from the repository root, with no build step or package install.
 
 ```sh
-# A blue, spinning solid logo. Stop animations with Ctrl+C.
-node src/cli.js docs/logo.svg --effect spin3d --width 60 --color '#0071bc'
+# A blue, spinning solid M. Stop animations with Ctrl+C.
+node src/cli.js --effect spin3d --width 60 --color '#0071bc'
 
-# A slower wave across the logo at 30 frames per second.
-node src/cli.js docs/logo.svg --effect wave --speed 0.8 --fps 30
+# Pick any rotation mode: spinY, spinX, roll, tumble, wobble, flip, orbit, bounce.
+node src/cli.js --rotation tumble --speed 0.8
 
-# One uncolored, static frame suitable for logs or copying.
-NO_COLOR=1 node src/cli.js docs/logo.svg --width 60
+# A wave across the M at 30 frames per second.
+node src/cli.js --effect wave --fps 30
 
-# Save a plain-text logo. Redirected output is always static.
-node src/cli.js docs/logo.svg --width 60 > logo.txt
+# Move the light and use a coarser character ramp.
+node src/cli.js --light 1,-0.5,0.8 --ramp ' .:-=+*#%@'
+
+# One uncolored frame at 0.55 seconds, suitable for logs or copying.
+NO_COLOR=1 node src/cli.js --width 60 --time 0.55
+
+# Save a plain-text M. Redirected output is always one frame.
+node src/cli.js --width 60 > m.txt
 ```
 
 Animations require an interactive terminal. `NO_COLOR`, `TERM=dumb`, or redirected
-output produces a static plain-text frame regardless of the requested effect.
+output prints a single plain-text frame: the flat image by default, or the chosen
+effect at `--time` seconds.
 
-![Static terminal logo](screenshots/terminal.png)
+![Terminal output](screenshots/terminal.png)

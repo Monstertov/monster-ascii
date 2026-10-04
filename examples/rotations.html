@@ -1,0 +1,29 @@
+<!doctype html>
+<!-- All rotation modes side by side. Serve the repository over HTTP, then open this file. -->
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rotation modes</title>
+<style>
+  :root { color-scheme: light dark; --bg: #f3f6fa; --panel: #fff; --text: #17212b; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #0b1118; --panel: #151e29; --text: #edf3f8; } }
+  body { margin: 0; padding: 24px; background: var(--bg); color: var(--text); font: 16px system-ui, sans-serif; }
+  main { max-width: 1100px; margin: auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+  figure { margin: 0; padding: 12px; background: var(--panel); border-radius: 12px; }
+  figure div { height: 230px; display: flex; align-items: center; justify-content: center; }
+  figcaption { font: 14px ui-monospace, monospace; text-align: center; }
+</style>
+<main id="grid"></main>
+<script type="module">
+  import { mount, textMask } from '../src/web.js';
+  import { rotations } from '../src/core.js';
+  const mask = textMask('M', { width: 120 });
+  for (const rotation of rotations) {
+    const figure = document.createElement('figure'), box = document.createElement('div'), caption = document.createElement('figcaption');
+    caption.textContent = rotation;
+    figure.append(box, caption);
+    document.querySelector('#grid').append(figure);
+    await mount(box, mask, { width: 44, rotation, color: '#0071bc', fontSize: 'fit', label: 'Letter M, ' + rotation });
+  }
+</script>
+</html>
