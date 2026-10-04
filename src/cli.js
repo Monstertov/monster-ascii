@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import {loadImage,animate,ansiFrame} from './node.js';
+import {loadImage,animate} from './node.js';
 import {createRenderer} from './core.js';
 try {
   const args=process.argv.slice(2),file=args.shift(),options={};
