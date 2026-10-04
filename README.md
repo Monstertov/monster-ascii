@@ -20,6 +20,20 @@ animation.destroy();
 
 Without a bundler, import `./src/web.js` directly. Serve files over HTTP. Cross-origin image servers must allow canvas access. `mount` accepts an image URL or a mask, creates a crisp, selectable `pre`, fits the container with ResizeObserver, pauses rendering off-screen and in hidden tabs, and shows the time-zero frame for reduced motion. The container gets an accessible label. Raster input is sampled at 128 columns by default with `loadImage(url, size)`.
 
+## Examples
+
+Serve the repository over HTTP with `python3 -m http.server`, then open an example.
+Each HTML file imports directly from `../src/` and uses the repository logo.
+The examples follow the system color scheme and reduced-motion preference.
+
+- [Loading splash](https://monstertov.github.io/monster-ascii/examples/loading.html): full-screen logo that fades out after three seconds.
+
+  ![Loading splash](examples/screenshots/loading.png)
+
+- [Terminal commands](https://github.com/Monstertov/monster-ascii/blob/main/examples/terminal.md): spinning, wave and plain-text output.
+
+  ![Terminal output](examples/screenshots/terminal.png)
+
 ## Core
 
 ```js
