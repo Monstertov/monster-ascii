@@ -1,9 +1,22 @@
 {
   "name": "monster-ascii",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
-  "license": "MIT",
-  "description": "Renderer independent animated ASCII logos with solid 3D extrusion",
+  "license": "Apache-2.0",
+  "author": "Monstertov",
+  "description": "Renderer independent animated ASCII art with solid 3D extrusion and eight rotation modes",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Monstertov/monster-ascii.git"
+  },
+  "homepage": "https://github.com/Monstertov/monster-ascii#readme",
+  "bugs": {
+    "url": "https://github.com/Monstertov/monster-ascii/issues"
+  },
+  "keywords": ["ascii", "ascii-art", "3d", "animation", "terminal", "zero-dependency"],
+  "engines": {
+    "node": ">=20"
+  },
   "exports": {
     ".": {
       "types": "./index.d.ts",
@@ -29,6 +42,7 @@
     "src",
     "index.d.ts",
     "LICENSE",
+    "NOTICE",
     "README.md"
   ]
 }
