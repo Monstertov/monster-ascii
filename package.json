@@ -1,0 +1,34 @@
+{
+  "name": "monster-ascii",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "MIT",
+  "description": "Renderer independent animated ASCII logos with solid 3D extrusion",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./src/core.js"
+    },
+    "./web": {
+      "types": "./src/web.d.ts",
+      "default": "./src/web.js"
+    },
+    "./node": {
+      "types": "./src/node.d.ts",
+      "default": "./src/node.js"
+    }
+  },
+  "bin": {
+    "monster-ascii": "./src/cli.js"
+  },
+  "scripts": {
+    "test": "node --test",
+    "benchmark": "node test/benchmark.js"
+  },
+  "files": [
+    "src",
+    "index.d.ts",
+    "LICENSE",
+    "README.md"
+  ]
+}
