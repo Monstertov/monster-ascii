@@ -7,7 +7,7 @@ export async function loadImage(source,size=128) {
   return imageMask(canvas.width,canvas.height,ctx.getImageData(0,0,canvas.width,canvas.height).data);
 }
 /** Rasterize text from a font through canvas into a mask `width` pixels wide, tight around the glyphs. */
-export function textMask(text='M',{width=160,font='system-ui, sans-serif',weight=800}={}) {
+export function textMask(text='M',{width=160,font='system-ui, sans-serif',weight=500}={}) {
   const ctx=document.createElement('canvas').getContext('2d',{willReadFrequently:true});
   ctx.font=`${weight} 100px ${font}`;
   const m=ctx.measureText(text),ink=m.actualBoundingBoxLeft+m.actualBoundingBoxRight;
