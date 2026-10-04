@@ -62,7 +62,7 @@ Node exports `loadImage(file)`, `decodePNG(buffer)`, `ansiFrame(frame,color)` an
 
 ## Validation and performance
 
-`node --test` uses only stdlib. `node scripts/benchmark.js` measures 300 warmed frames at 80 by 40 on the Monstertov logo. On MNST-AI-1 with Node 24.13.0: spin3d 8.595 ms/frame, wave 0.381, glitch 0.328, scan 0.416, breathe 0.332, static 0.281. The 30 fps budget is 33.33 ms. Results vary by hardware and source resolution.
+`node --test` uses only stdlib. `node scripts/benchmark.js` measures 300 warmed frames at 80 by 40 on the Monstertov logo. On a 20-core Intel Xeon Silver 4210R (Proxmox LXC) with Node 24.13.0: spin3d 8.595 ms/frame, wave 0.381, glitch 0.328, scan 0.416, breathe 0.332, static 0.281. The 30 fps budget is 33.33 ms. Results vary by hardware and source resolution.
 
 Browser checks use the pinned official image `mcr.microsoft.com/playwright:v1.58.2-noble` and matching `playwright@1.58.2`, verified against the [Microsoft registry](https://mcr.microsoft.com/en-us/artifact/mar/playwright/tag/v1.58.2) and [official Docker source](https://github.com/microsoft/playwright/blob/main/utils/docker/Dockerfile.noble). Playwright is a test-only install, not a library dependency.
 
