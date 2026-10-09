@@ -54,17 +54,19 @@
     <label><span>Color mode</span><select id="mode"><option value="solid">Solid</option><option value="shaded">Shaded by brightness</option><option value="gradient">Gradient</option></select></label>
     <label><span>Background</span><input id="background" type="color" value="#08131f"></label>
     <label class="check"><input id="invert" type="checkbox"><span>Invert</span></label>
+    <label><span>Intro</span><select id="intro"></select></label>
+    <div class="field"><span>Intro</span><button id="play" type="button">Play intro</button></div>
     <div class="field"><span>View</span><button id="fullscreen" type="button">Fullscreen</button></div>
   </form>
   <footer>Examples: <a href="../examples/spin.html">Spinning M</a> | <a href="https://github.com/Monstertov/monster-ascii/blob/main/examples/terminal.md">Terminal</a> | <a href="https://github.com/Monstertov/monster-ascii">Source and documentation</a></footer>
 </main>
 <script type="module">
 import {mount,textMask} from '../src/web.js';
-import {effects,rotations} from '../src/core.js';
+import {effects,rotations,intros} from '../src/core.js';
 const $ = id => document.getElementById(id);
 const ramps = {Classic:' .,:;irsXA253hMHGS#9B&@', Minimal:' .:-=+*#%@', Blocks:' ░▒▓█', Dots:' .oO0@', Binary:' 01', Custom:null};
 const fill = (select, names) => names.forEach(n => select.append(new Option(n, n)));
-fill($('effect'), effects); fill($('rotation'), rotations); fill($('preset'), Object.keys(ramps));
+fill($('effect'), effects); fill($('rotation'), rotations); fill($('preset'), Object.keys(ramps)); fill($('intro'), intros);
 const mix = (hex, to, k) => '#' + [1, 3, 5].map(i => Math.round(parseInt(hex.slice(i, i + 2), 16) * (1 - k) + parseInt(to.slice(i, i + 2), 16) * k).toString(16).padStart(2, '0')).join('');
 const rad = d => d * Math.PI / 180;
 
@@ -81,7 +83,7 @@ function settings() {
   };
 }
 const maskFor = () => textMask($('text').value, {width: Math.min(360, Math.max(96, Math.round($('width').value * 1.3)))});
-const stage = $('stage'), handle = await mount(stage, maskFor(), settings());
+const stage = $('stage'), handle = await mount(stage, maskFor(), {...settings(), intro: $('intro').value});
 let maskKey = '';
 function apply(event) {
   const o = settings(), key = $('text').value + '|' + $('width').value;
@@ -95,6 +97,8 @@ function apply(event) {
   handle.update(o);
 }
 $('controls').addEventListener('input', apply);
+const play = () => handle.playIntro($('intro').value);
+$('intro').addEventListener('change', play); $('play').addEventListener('click', play);
 maskKey = $('text').value + '|' + $('width').value; apply();
 
 const full = $('fullscreen');

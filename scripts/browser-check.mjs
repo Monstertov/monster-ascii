@@ -37,14 +37,23 @@ await set(demo,'background','#123456');assert.equal(await demo.evaluate(()=>getC
 await set(demo,'fontSize','20');await demo.waitForTimeout(100);assert.equal(await demo.evaluate(()=>getComputedStyle(document.querySelector('#stage pre')).fontSize),'20px');await set(demo,'fontSize','0');
 await demo.click('#fullscreen');await demo.waitForTimeout(300);assert.equal(await demo.evaluate(()=>document.fullscreenElement?.id),'stage');await demo.keyboard.press('Escape');
 await demo.evaluate(()=>document.exitFullscreen?.().catch(()=>{}));await demo.waitForTimeout(200);
+const ink=t=>t.replace(/\s/g,'').length;await set(demo,'effect','static');await demo.waitForTimeout(100);const still=await demo.locator('#stage pre').textContent();
+for(const intro of ['assemble','sweep']){await set(demo,'intro',intro);await demo.locator('#play').click();assert.ok(ink(await demo.locator('#stage pre').textContent())<ink(still)*.2,intro+' starts without the final art');await demo.waitForTimeout(2300);assert.equal(await demo.locator('#stage pre').textContent(),still,intro+' ends on the art');}
+await set(demo,'intro','assemble');await set(demo,'effect','spin3d');
 await demo.emulateMedia({reducedMotion:'reduce'});await demo.waitForTimeout(150);const frozen=await demo.locator('#stage pre').textContent();await demo.waitForTimeout(500);assert.equal(await demo.locator('#stage pre').textContent(),frozen);
-console.log('Demo: every rotation animates, controls work, fps cap, fullscreen, reduced motion static');
+await demo.locator('#play').click();assert.equal(await demo.locator('#stage pre').textContent(),frozen,'reduced motion skips the intro');
+console.log('Demo: every rotation animates, controls work, fps cap, fullscreen, intros, reduced motion static');
 
 const spin=await open('/examples/spin.html',{width:800,height:700});
 const a=await spin.locator('pre').textContent();await spin.waitForTimeout(500);assert.notEqual(await spin.locator('pre').textContent(),a);
+assert.ok(await spin.evaluate(async()=>{
+  const {mount}=await import('/src/web.js'),el=document.body.appendChild(document.createElement('div'));el.style.cssText='width:300px;height:300px';
+  const h=await mount(el,undefined,{intro:'rain',introDuration:300,autoplayIntro:false}),pre=el.querySelector('pre'),hidden=getComputedStyle(pre).visibility==='hidden';
+  await new Promise(r=>setTimeout(r,200));const waited=getComputedStyle(pre).visibility==='hidden';await h.playIntro();const shown=getComputedStyle(pre).visibility==='visible'&&pre.textContent.trim().length>0;h.destroy();el.remove();return hidden&&waited&&shown;
+}),'autoplayIntro:false keeps the art hidden until playIntro resolves');
 const grid=await open('/examples/rotations.html',{width:1100,height:640});assert.equal(await grid.locator('pre').count(),rotations.length);console.log('Examples: spin.html and rotations.html animate');
 
-await shoot('/docs/',{width:1440,height:1000},550,['screenshots/demo.png',...publish?['docs/demo.png']:[]]);
+await shoot('/docs/',{width:1440,height:1000},2550,['screenshots/demo.png',...publish?['docs/demo.png']:[]]);
 await shoot('/examples/spin.html',{width:800,height:700},550,['screenshots/spin.png',...publish?['examples/screenshots/spin.png']:[]]);
 await shoot('/examples/rotations.html',{width:1100,height:640},450,['screenshots/rotations.png',...publish?['examples/screenshots/rotations.png']:[]]);
 if(publish){

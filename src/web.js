@@ -1,4 +1,4 @@
-import {imageMask,createRenderer,colorAt} from './core.js';
+import {imageMask,createRenderer,colorAt,introFrame,intros} from './core.js';
 /** Load an SVG/PNG URL through canvas. */
 export async function loadImage(source,size=128) {
   const img=new Image();img.crossOrigin='anonymous';img.src=source;await img.decode();
@@ -20,16 +20,20 @@ export function textMask(text='M',{width=160,font='system-ui, sans-serif',weight
 let cell;
 /** Width of one monospace character in em, measured once so rows can be drawn twice as tall as columns. */
 function cellWidth() {if(cell)return cell;const ctx=document.createElement('canvas').getContext('2d');ctx.font='600 100px monospace';return cell=ctx.measureText('M').width/100;}
-/** Mount selectable ASCII text. Source is an image URL, a mask or omitted for the letter M. Returns update, setMask and destroy methods. */
+/** Mount selectable ASCII text. Source is an image URL, a mask or omitted for the letter M. Returns update, setMask, playIntro and destroy methods. */
 export async function mount(element,source,options={}) {
+  if(options.intro&&!intros.includes(options.intro)) throw new Error('Unknown intro: '+options.intro);
   const mask=typeof source==='string'?await loadImage(source):source??textMask();let render=createRenderer(mask);
   const pre=document.createElement('pre'),cw=cellWidth();pre.style.cssText=`margin:0;overflow:visible;flex-shrink:0;white-space:pre;font-family:monospace;font-weight:600;line-height:${2*cw};letter-spacing:0;user-select:text`;
   element.setAttribute('aria-label',options.label??'Animated ASCII art');pre.setAttribute('aria-hidden','true');element.append(pre);
-  let o={width:60,fps:30,...options},visible=true,id,last=-Infinity,destroyed=false,phase=0,before=performance.now();
+  let o={width:60,fps:30,introDuration:2000,...options},visible=true,id,last=-Infinity,destroyed=false,phase=0,before=performance.now(),intro=null,pending=!!o.intro&&o.autoplayIntro===false;
   const motion=matchMedia('(prefers-reduced-motion: reduce)');
   function draw(now=performance.now()){
-    if(!motion.matches)phase+=Math.min(1,Math.max(0,now-before)/1000)*(o.speed??1);before=now;
-    const frame=render(motion.matches?0:phase,{...o,speed:1}),fitW=element.clientWidth/(frame.width*cw),fitH=element.clientHeight/(frame.height*2*cw);
+    // The animation clock holds still during an intro, so the intro builds one pose and the animation continues from it.
+    if(!motion.matches&&!intro&&!pending)phase+=Math.min(1,Math.max(0,now-before)/1000)*(o.speed??1);before=now;
+    let frame=render(motion.matches?0:phase,{...o,speed:1});if(intro)frame=introFrame(frame,intro.name,(now-intro.start)/o.introDuration,intro.seed);
+    pre.style.visibility=pending?'hidden':'';
+    const fitW=element.clientWidth/(frame.width*cw),fitH=element.clientHeight/(frame.height*2*cw);
     pre.style.fontSize=Math.max(1,typeof o.fontSize==='number'?o.fontSize:o.fontSize==='fit'?Math.min(fitW,fitH||fitW):Math.min(12,fitW))+'px';
     if(Array.isArray(o.color)||o.color==='brightness') {
       const fragment=document.createDocumentFragment();let run='',rgb=null;
@@ -43,5 +47,14 @@ export async function mount(element,source,options={}) {
   const observer=new IntersectionObserver(entries=>{visible=entries[0].isIntersecting;});observer.observe(element);
   const refresh=()=>{last=-Infinity;before=performance.now();draw();};motion.addEventListener('change',refresh);document.addEventListener('visibilitychange',refresh);
   draw();id=requestAnimationFrame(tick);
-  return {update(next){o={...o,...next};draw();},setMask(next){render=createRenderer(next);draw();},destroy(){destroyed=true;cancelAnimationFrame(id);resize.disconnect();observer.disconnect();motion.removeEventListener('change',refresh);document.removeEventListener('visibilitychange',refresh);pre.remove();}};
+  const handle={update(next){o={...o,...next};draw();},setMask(next){render=createRenderer(next);draw();},
+    playIntro(name=o.intro){
+      if(!intros.includes(name))return Promise.reject(new Error('Unknown intro: '+name));
+      intro?.done();pending=false;
+      if(motion.matches){draw();return Promise.resolve();}
+      return new Promise(resolve=>{const run={name,seed:Math.random()*2**32>>>0,start:performance.now()};run.done=()=>{clearTimeout(run.timer);intro=null;resolve();};run.timer=setTimeout(()=>{run.done();draw();},o.introDuration);intro=run;draw();});
+    },
+    destroy(){intro?.done();destroyed=true;cancelAnimationFrame(id);resize.disconnect();observer.disconnect();motion.removeEventListener('change',refresh);document.removeEventListener('visibilitychange',refresh);pre.remove();}};
+  if(o.intro&&!pending)handle.playIntro();
+  return handle;
 }
