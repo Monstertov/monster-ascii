@@ -82,7 +82,7 @@ export async function mount(element,source,options={}) {
       if(!intros.includes(name))return Promise.reject(new Error('Unknown intro: '+name));
       intro?.done();pending=false;
       if(motion.matches){draw();return Promise.resolve();}
-      return new Promise(resolve=>{const run={name,seed:Math.random()*2**32>>>0,start:performance.now()};run.done=()=>{clearTimeout(run.timer);run.stop?.();intro=null;resolve();};run.timer=setTimeout(()=>{run.done();draw();},o.introDuration);intro=run;
+      return new Promise(resolve=>{const run={name,seed:Math.random()*2**32>>>0,start:performance.now()};run.done=()=>{clearTimeout(run.timer);run.stop?.();intro=null;before=performance.now();resolve();};run.timer=setTimeout(()=>{run.done();draw();},o.introDuration);intro=run;
         if(name==='assemble'&&o.introFrom==='viewport'){run.overlay=true;run.stop=viewportIntro(pre,draw(),o,run.start);}else draw();});
     },
     destroy(){intro?.done();destroyed=true;cancelAnimationFrame(id);resize.disconnect();observer.disconnect();motion.removeEventListener('change',refresh);document.removeEventListener('visibilitychange',refresh);pre.remove();}};
