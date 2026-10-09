@@ -8,6 +8,7 @@ export interface Pose {m:number[]; dy?:number; sy?:number; fit?:number}
 export const effects:Effect[];
 export const rotations:Rotation[];
 export const intros:Intro[];
+export const glyphs:string;
 export function clamp(v:number,lo?:number,hi?:number):number;
 export function imageMask(width:number,height:number,rgba:ArrayLike<number>):Mask;
 export function mMask(size?:number):Mask;

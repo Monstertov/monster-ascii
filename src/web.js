@@ -1,4 +1,4 @@
-import {imageMask,createRenderer,colorAt,introFrame,introSpeed,intros} from './core.js';
+import {imageMask,createRenderer,colorAt,introFrame,introSpeed,intros,glyphs} from './core.js';
 /** Load an SVG/PNG URL through canvas. */
 export async function loadImage(source,size=128) {
   const img=new Image();img.crossOrigin='anonymous';img.src=source;await img.decode();
@@ -20,13 +20,19 @@ export function textMask(text='M',{width=160,font='system-ui, sans-serif',weight
 let cell;
 /** Width of one monospace character in em, measured once so rows can be drawn twice as tall as columns. */
 function cellWidth() {if(cell)return cell;const ctx=document.createElement('canvas').getContext('2d');ctx.font='600 100px monospace';return cell=ctx.measureText('M').width/100;}
-/** Assemble from the edges of the browser window: characters fly on a fixed canvas above the page into their cells of the hidden pre.
+/** Play an intro over the whole browser window: characters move on a fixed canvas above the page into their cells of the hidden pre.
  * paint(frame, now) draws the live frame, stop() removes the canvas. */
-function viewportIntro(pre,o,start) {
-  const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d'),range=document.createRange(),W=innerWidth,H=innerHeight,paths=[],born=[];let painted=false;
+function viewportIntro(pre,o,name,start) {
+  const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d'),range=document.createRange(),W=innerWidth,H=innerHeight,paths=[],born=[],columns=[];let painted=false;
   canvas.setAttribute('aria-hidden','true');canvas.style.cssText='position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2147483647';document.body.append(canvas);
-  // Every cell gets a start point spread evenly along the whole window border, corners included, a little outside it.
-  const path=i=>paths[i]??=(()=>{const s=Math.random()*2*(W+H),m=10+Math.random()*50,[x,y]=s<W?[s,-m]:s<W+H?[W+m,s-W]:s<2*W+H?[2*W+H-s,H+m]:[-m,2*(W+H)-s];return {x,y,delay:Math.random()*.45};})();
+  const R=Math.random,out=k=>1-(1-k)**3,inOut=k=>k<.5?4*k*k*k:1-(2-2*k)**3/2,local=(p,delay,span)=>Math.min(1,Math.max(0,(p-delay)/span));
+  // Every cell gets its own start point and timing once, so it keeps its path while the art turns.
+  const path=(i,x,y,w,h)=>paths[i]??=(()=>{
+    if(name==='assemble'){const s=R()*2*(W+H),m=10+R()*50,[sx,sy]=s<W?[s,-m]:s<W+H?[W+m,s-W]:s<2*W+H?[2*W+H-s,H+m]:[-m,2*(W+H)-s];return {x:sx,y:sy,delay:R()*.45};}
+    if(name==='rain')return {x:R()*W,y:-20-R()*H*.6,delay:(columns[x]??=R())*.4+(1-y/h)*.2};
+    if(name==='sweep')return {dx:R()*120,y:R()*H};
+    return {x:R()*W,y:R()*H,delay:R()*(name==='dissolve'?.55:name==='decode'?.4:.35)};
+  })();
   return {paint(frame,now){
     const dpr=devicePixelRatio||1,w=Math.round(canvas.clientWidth*dpr),h=Math.round(canvas.clientHeight*dpr),p=(now-start)/o.introDuration,solid=!Array.isArray(o.color)&&o.color!=='brightness';
     if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
@@ -34,15 +40,28 @@ function viewportIntro(pre,o,start) {
     // Targets are read every frame, so scrolling or resizing during the intro still lands on the art.
     range.selectNodeContents(pre);const r=range.getBoundingClientRect(),cs=getComputedStyle(pre),cw=r.width/frame.width,lh=r.height/frame.height;
     ctx.font=`${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;const m=ctx.measureText('M'),base=(lh-m.fontBoundingBoxAscent-m.fontBoundingBoxDescent)/2+m.fontBoundingBoxAscent;
-    let fill=solid?o.color??'#0071bc':null,alpha=1;ctx.fillStyle=fill;ctx.globalAlpha=1;
+    let hi=-1;frame.chars.forEach((c,i)=>{if(c!==' '&&(hi<0||frame.brightness[i]>frame.brightness[hi]))hi=i;});
+    const color=i=>solid?o.color??'#0071bc':`rgb(${colorAt(o.color,frame.brightness[i]).join(',')})`,fadeIn=Math.min(1,(now-start)/250);
+    let fill,alpha;const set=(f,a)=>{if(f!==fill)ctx.fillStyle=fill=f;if(a!==alpha)ctx.globalAlpha=alpha=a;};
+    if(name==='sweep'&&hi>=0&&p<.75){
+      // The scan line crosses the whole window with a short trail and releases each character as it passes its column.
+      const x=-30+p/.75*(W+60);for(const [d,a] of [[0,1],[1,.5],[2,.25]]){set(color(hi),a);for(let y=base;y<H+lh;y+=lh)ctx.fillText(frame.chars[hi],x-d*cw,y);}
+    }
     frame.chars.forEach((c,i)=>{
       if(c===' '){born[i]=undefined;return;}
       // A cell that fills while the animation turns fades in instead of popping up.
       born[i]??=painted?now:-Infinity;
-      const q=path(i),k=1-(1-Math.min(1,Math.max(0,(p-q.delay)/.55)))**3,a=k>=1?1:Math.min(1,(now-born[i])/150),x=i%frame.width,tx=r.left+x*cw,ty=r.top+(i-x)/frame.width*lh+base;
-      if(a!==alpha)ctx.globalAlpha=alpha=a;
-      if(!solid){const next=`rgb(${colorAt(o.color,frame.brightness[i]).join(',')})`;if(next!==fill)ctx.fillStyle=fill=next;}
-      ctx.fillText(c,q.x+(tx-q.x)*k,q.y+(ty-q.y)*k);
+      const x=i%frame.width,y=(i-x)/frame.width,tx=r.left+x*cw,ty=r.top+y*lh+base,q=path(i,x,y,frame.width,frame.height);
+      let k,sx=q.x,sy=q.y,ch=c,a=1;
+      if(name==='assemble')k=out(local(p,q.delay,.55));
+      // Drops come in straight from across the top of the window, speeding up as they fall.
+      else if(name==='rain'){k=local(p,q.delay,.4);k*=k;}
+      else if(name==='scatter')k=inOut(local(p,q.delay,.65));
+      else if(name==='decode'){k=out(local(p,q.delay,.6));if(k<.92)ch=glyphs[(Math.imul(i+1,2654435761)+Math.floor(p*30)*40503>>>0)%glyphs.length];}
+      else if(name==='sweep'){const release=Math.min(1,Math.max(0,(tx+30)/(W+60)))*.75;if(p<release)return;k=out(local(p,release,.25));sx=tx-q.dx;}
+      else {if(p<q.delay)return;k=out(local(p,q.delay,.4));a=Math.min(1,(p-q.delay)*o.introDuration/120);if(k<1)ch=frame.chars[hi];}
+      set(color(ch===c?i:hi>=0&&ch===frame.chars[hi]?hi:i),k>=1?1:Math.min(a,fadeIn,(now-born[i])/150));
+      ctx.fillText(ch,sx+(tx-sx)*k,sy+(ty-sy)*k);
     });
     painted=true;
   },stop(){canvas.remove();}};
@@ -88,7 +107,7 @@ export async function mount(element,source,options={}) {
         run.done=()=>{clearTimeout(run.timer);run.overlay?.stop();intro=null;resolve();};
         // Draws end the intro; the timer only covers pages that stop drawing, such as hidden tabs.
         run.timer=setTimeout(()=>{run.done();draw();},o.introDuration+250);
-        if(name==='assemble'&&o.introFrom==='viewport')run.overlay=viewportIntro(pre,o,run.start);
+        if(o.introFrom==='viewport')run.overlay=viewportIntro(pre,o,name,run.start);
         intro=run;draw(run.start);});
     },
     destroy(){intro?.done();destroyed=true;cancelAnimationFrame(id);resize.disconnect();observer.disconnect();motion.removeEventListener('change',refresh);document.removeEventListener('visibilitychange',refresh);pre.remove();}};

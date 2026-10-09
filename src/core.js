@@ -102,7 +102,8 @@ export const intros=['assemble','rain','scatter','decode','sweep','dissolve'];
 const random=seed=>()=>{seed=seed+0x6d2b79f5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};
 /** Animation speed factor during an intro: eases from 0.3 to exactly 1 at the end, so the animation is already moving while the intro plays and keeps its speed after it. */
 export const introSpeed=progress=>.3+.7*(1-(1-clamp(progress))**3);
-const glyphs='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#$%&*+=<>?';
+/** Glyphs the decode intro flickers through. */
+export const glyphs='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#$%&*+=<>?';
 /** In-between frame of an intro towards a target frame, which may be the live animation. Progress 0 is the start, 1 returns the frame itself.
  * Every grid cell has its own path and timing from the seed, so a cell keeps its path while the target changes. */
 export function introFrame(frame,name,progress,seed=1) {
