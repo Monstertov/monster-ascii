@@ -1,7 +1,7 @@
 import {readFile} from 'node:fs/promises';
 import {spawnSync} from 'node:child_process';
 import {decodePNG} from './png.js';
-import {imageMask,createRenderer,colorAt,introFrame,intros} from './core.js';
+import {imageMask,createRenderer,colorAt,introFrame,introSpeed,intros} from './core.js';
 export {decodePNG};
 export async function loadImage(file) {
   let data=await readFile(file);
@@ -17,9 +17,9 @@ export function ansiFrame(frame,color='#0071bc') {
 }
 export function animate(mask,options={},stream=process.stdout) {
   if(options.intro&&!intros.includes(options.intro))throw new Error('Unknown intro: '+options.intro);
-  const render=createRenderer(mask,options),start=performance.now(),intro=options.intro?options.introDuration??2000:0,seed=Math.random()*2**32>>>0;let timer;
-  // The animation starts where the intro ends.
-  const draw=()=>{const ms=performance.now()-start,frame=render(Math.max(0,ms-intro)/1000);stream.write('\x1b[H'+ansiFrame(ms<intro?introFrame(frame,options.intro,ms/intro,seed):frame,options.color));};
+  const render=createRenderer(mask,options),start=performance.now(),intro=options.intro?options.introDuration??2000:0,seed=Math.random()*2**32>>>0;let timer,phase=0,last=start;
+  // The animation runs during the intro too, speeding up as the characters arrive.
+  const draw=()=>{const now=performance.now(),p=intro?(now-start)/intro:1;phase+=(now-last)/1000*introSpeed(p);last=now;const frame=render(phase);stream.write('\x1b[H'+ansiFrame(p<1?introFrame(frame,options.intro,p,seed):frame,options.color));};
   stream.write('\x1b[?1049h\x1b[?25l');draw();if(options.effect!=='static'||intro)timer=setInterval(draw,1000/(options.fps??30));
   return ()=>{clearInterval(timer);stream.write('\x1b[0m\x1b[?25h\x1b[?1049l');};
 }
