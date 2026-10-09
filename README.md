@@ -60,7 +60,7 @@ node src/cli.js --rotation orbit
 
 ## Intros
 
-An intro plays once and then hands over to the animation. The animation clock holds still while it plays, so the intro builds one pose and the animation continues from exactly that frame.
+An intro plays once while the animation is already running, so both read as one motion. Each intro frame targets the live animation frame, and the animation eases from 30% to full speed as the characters arrive (`introSpeed(progress)`). The intro ends on the frame where progress reaches one, which is the plain animation frame, so the handover adds no jump in pose or speed.
 
 | intro | Motion |
 | --- | --- |
@@ -81,7 +81,7 @@ await art.playIntro();          // resolves when the intro is done
 art.playIntro('rain');          // replay with another intro
 ```
 
-In the browser, `introFrom: 'viewport'` makes `assemble` fly in from the edges of the whole browser window instead of the edges of the art's box. The characters are drawn on a temporary fixed canvas above the page (`pointer-events: none`, sharp on high-DPI screens) and land exactly on the cells of the real `pre`, which keeps its place and size and is shown when the canvas is removed. Targets are measured every frame, so scrolling or resizing during the intro still lands on the art. The other intros always play inside the box.
+In the browser, `introFrom: 'viewport'` makes `assemble` fly in from the edges of the whole browser window instead of the edges of the art's box. The characters are drawn on a temporary fixed canvas above the page (`pointer-events: none`, sharp on high-DPI screens) and land exactly on the cells of the real `pre`, which keeps its place and size and is shown when the canvas is removed. Cells that fill while the art turns fade in instead of popping up. Targets are measured every frame, so scrolling or resizing during the intro still lands on the art. The other intros always play inside the box.
 
 ```js
 await mount(el, mask, { intro: 'assemble', introFrom: 'viewport' });
@@ -89,7 +89,7 @@ await mount(el, mask, { intro: 'assemble', introFrom: 'viewport' });
 
 With `autoplayIntro: false` the art stays hidden (`visibility: hidden`, layout kept) until `playIntro` is called. With reduced motion `playIntro` shows the art right away and resolves. In the terminal: `node src/cli.js --intro assemble`.
 
-`introFrame(frame, name, progress, seed)` is the pure function behind it: it takes a finished frame and returns the in-between frame at `progress` from zero to one. Progress one returns the frame itself, and the same seed gives the same frames. Moved characters keep their brightness, so gradient and brightness colors work during the intro. `intros` lists the names.
+`introFrame(frame, name, progress, seed)` is the pure function behind it: it takes a finished frame and returns the in-between frame at `progress` from zero to one. Progress one returns the frame itself, and the same seed gives the same frames. Every grid cell has its own path and timing from the seed, so feeding it the live animation frame each tick keeps each cell on its path while the shape turns. Moved characters keep their brightness, so gradient and brightness colors work during the intro. `intros` lists the names.
 
 ## Examples
 
@@ -115,7 +115,7 @@ const frame = render(1.25); // seconds
 console.log(frame.text);
 ```
 
-A mask has `width`, `height`, and `data` coverage/luminance values from zero to one. `mMask(size)` builds a capital M in code, so tests and the CLI need no font or image file. A frame has `width`, `height`, `chars`, `brightness` and newline-separated `text`. `render(seconds, overrides)` composes options per frame. Helpers: `introFrame(frame, name, progress, seed)`, `createModel(mask, depth)`, `rotate(x,y,z,angle,tilt)`, `pose(rotation, seconds, tilt)`, `clamp(value,min,max)` and `colorAt(color, brightness)`.
+A mask has `width`, `height`, and `data` coverage/luminance values from zero to one. `mMask(size)` builds a capital M in code, so tests and the CLI need no font or image file. A frame has `width`, `height`, `chars`, `brightness` and newline-separated `text`. `render(seconds, overrides)` composes options per frame. Helpers: `introFrame(frame, name, progress, seed)`, `introSpeed(progress)`, `createModel(mask, depth)`, `rotate(x,y,z,angle,tilt)`, `pose(rotation, seconds, tilt)`, `clamp(value,min,max)` and `colorAt(color, brightness)`.
 
 ## Options
 
@@ -158,7 +158,7 @@ Node exports `loadImage(file)`, `decodePNG(buffer)`, `ansiFrame(frame,color)` an
 
 ## Validation and performance
 
-`node --test` uses only stdlib: 60 tests cover every rotation mode (frame size, change over time, no NaN, valid rotation matrices), every intro (start away from the final form, exact final frame, same frames for a seed, assemble entering from every side and corner), the M mask, a PNG round trip, the CLI options and the PNG decoder. `node scripts/benchmark.js` measures 300 warmed frames at 80 by 40 on the built-in M mask (128 by 128 pixels). On an Intel Xeon Silver 4210R with Node 20.19.2: spin3d 2.052 ms/frame, wave 0.353, glitch 0.318, scan 0.388, breathe 0.277, static 0.275 (median of five runs). The eight rotation modes of spin3d take 1.761 to 2.014 ms/frame. The 30 fps budget is 33.33 ms. Results vary by hardware and source resolution.
+`node --test` uses only stdlib: 62 tests cover every rotation mode (frame size, change over time, no NaN, valid rotation matrices), every intro (start away from the final form, the live frame at progress one, same frames for a seed, per-cell paths that ignore other cells, assemble entering from every side and corner), the M mask, a PNG round trip, the CLI options and the PNG decoder. `node scripts/benchmark.js` measures 300 warmed frames at 80 by 40 on the built-in M mask (128 by 128 pixels). On an Intel Xeon Silver 4210R with Node 20.19.2: spin3d 2.052 ms/frame, wave 0.353, glitch 0.318, scan 0.388, breathe 0.277, static 0.275 (median of five runs). The eight rotation modes of spin3d take 1.761 to 2.014 ms/frame. The 30 fps budget is 33.33 ms. Results vary by hardware and source resolution.
 
 Browser checks use Playwright, a test-only install and not a library dependency. They start their own static server, drive the demo (every rotation, text, columns, font size, ramp, color, background, invert, fps cap, fullscreen, intros, reduced motion), check that `introFrom: 'viewport'` draws its canvas only while the intro runs, check that `autoplayIntro: false` keeps the art hidden until `playIntro` resolves, load the examples and fail on any console error. Run them with the pinned official image `mcr.microsoft.com/playwright:v1.58.2-noble`, which matches `playwright@1.58.2` ([tag list](https://mcr.microsoft.com/en-us/artifact/mar/playwright/tag/v1.58.2), [Docker source](https://github.com/microsoft/playwright/blob/main/utils/docker/Dockerfile.noble)):
 
