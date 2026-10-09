@@ -23,7 +23,7 @@ function cellWidth() {if(cell)return cell;const ctx=document.createElement('canv
 /** Mount selectable ASCII text. Source is an image URL, a mask or omitted for the letter M. Returns update, setMask and destroy methods. */
 export async function mount(element,source,options={}) {
   const mask=typeof source==='string'?await loadImage(source):source??textMask();let render=createRenderer(mask);
-  const pre=document.createElement('pre'),cw=cellWidth();pre.style.cssText=`margin:0;white-space:pre;font-family:monospace;font-weight:600;line-height:${2*cw};letter-spacing:0;user-select:text`;
+  const pre=document.createElement('pre'),cw=cellWidth();pre.style.cssText=`margin:0;overflow:visible;flex-shrink:0;white-space:pre;font-family:monospace;font-weight:600;line-height:${2*cw};letter-spacing:0;user-select:text`;
   element.setAttribute('aria-label',options.label??'Animated ASCII art');pre.setAttribute('aria-hidden','true');element.append(pre);
   let o={width:60,fps:30,...options},visible=true,id,last=-Infinity,destroyed=false,phase=0,before=performance.now();
   const motion=matchMedia('(prefers-reduced-motion: reduce)');
