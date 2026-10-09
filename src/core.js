@@ -1,5 +1,5 @@
 /** @typedef {{width:number,height:number,data:ArrayLike<number>}} Mask */
-/** @typedef {{width?:number,height?:number,ramp?:string,effect?:string,rotation?:string,speed?:number,depth?:number,tilt?:number,light?:number[],invert?:boolean,color?:string|string[],fps?:number,fontSize?:number|'fit',label?:string,intro?:string|null,introDuration?:number,autoplayIntro?:boolean}} Options */
+/** @typedef {{width?:number,height?:number,ramp?:string,effect?:string,rotation?:string,speed?:number,depth?:number,tilt?:number,light?:number[],invert?:boolean,color?:string|string[],fps?:number,fontSize?:number|'fit',label?:string,intro?:string|null,introDuration?:number,introFrom?:'box'|'viewport',autoplayIntro?:boolean}} Options */
 export const effects = ['spin3d','wave','glitch','scan','breathe','static'];
 /** Rotation modes of the spin3d effect. */
 export const rotations = ['spinY','spinX','roll','tumble','wobble','flip','orbit','bounce'];

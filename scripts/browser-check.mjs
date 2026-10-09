@@ -39,7 +39,11 @@ await demo.click('#fullscreen');await demo.waitForTimeout(300);assert.equal(awai
 await demo.evaluate(()=>document.exitFullscreen?.().catch(()=>{}));await demo.waitForTimeout(200);
 const ink=t=>t.replace(/\s/g,'').length;await set(demo,'effect','static');await demo.waitForTimeout(100);const still=await demo.locator('#stage pre').textContent();
 for(const intro of ['assemble','sweep']){await set(demo,'intro',intro);await demo.locator('#play').click();assert.ok(ink(await demo.locator('#stage pre').textContent())<ink(still)*.2,intro+' starts without the final art');await demo.waitForTimeout(2300);assert.equal(await demo.locator('#stage pre').textContent(),still,intro+' ends on the art');}
-await set(demo,'intro','assemble');await set(demo,'effect','spin3d');
+await set(demo,'intro','assemble');await set(demo,'introFrom',true);await demo.locator('#play').click();
+assert.equal(await demo.locator('canvas').count(),1);assert.equal(await demo.evaluate(()=>getComputedStyle(document.querySelector('#stage pre')).visibility),'hidden');
+assert.ok(await demo.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth),'no horizontal scroll during the flight');
+await demo.waitForTimeout(2300);assert.equal(await demo.locator('canvas').count(),0);assert.equal(await demo.locator('#stage pre').textContent(),still,'viewport intro ends on the art');
+await set(demo,'introFrom',false);await set(demo,'effect','spin3d');
 await demo.emulateMedia({reducedMotion:'reduce'});await demo.waitForTimeout(150);const frozen=await demo.locator('#stage pre').textContent();await demo.waitForTimeout(500);assert.equal(await demo.locator('#stage pre').textContent(),frozen);
 await demo.locator('#play').click();assert.equal(await demo.locator('#stage pre').textContent(),frozen,'reduced motion skips the intro');
 console.log('Demo: every rotation animates, controls work, fps cap, fullscreen, intros, reduced motion static');

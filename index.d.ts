@@ -2,7 +2,7 @@ export interface Mask {width:number; height:number; data:ArrayLike<number>}
 export type Effect = 'spin3d'|'wave'|'glitch'|'scan'|'breathe'|'static';
 export type Rotation = 'spinY'|'spinX'|'roll'|'tumble'|'wobble'|'flip'|'orbit'|'bounce';
 export type Intro = 'assemble'|'rain'|'scatter'|'decode'|'sweep'|'dissolve';
-export interface Options {width?:number; height?:number; ramp?:string; effect?:Effect; rotation?:Rotation; speed?:number; depth?:number; tilt?:number; light?:[number,number,number]; invert?:boolean; color?:string|string[]; fps?:number; fontSize?:number|'fit'; label?:string; intro?:Intro|null; introDuration?:number; autoplayIntro?:boolean}
+export interface Options {width?:number; height?:number; ramp?:string; effect?:Effect; rotation?:Rotation; speed?:number; depth?:number; tilt?:number; light?:[number,number,number]; invert?:boolean; color?:string|string[]; fps?:number; fontSize?:number|'fit'; label?:string; intro?:Intro|null; introDuration?:number; introFrom?:'box'|'viewport'; autoplayIntro?:boolean}
 export interface Frame {width:number; height:number; brightness:Float32Array; chars:string[]; text:string}
 export interface Pose {m:number[]; dy?:number; sy?:number; fit?:number}
 export const effects:Effect[];
