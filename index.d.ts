@@ -16,4 +16,5 @@ export function pose(rotation:Rotation,t:number,tilt?:number):Pose;
 export function createModel(mask:Mask,depth?:number):number[][];
 export function createRenderer(mask:Mask,options?:Options):(seconds?:number,overrides?:Options)=>Frame;
 export function introFrame(frame:Frame,name:Intro,progress:number,seed?:number):Frame;
+export function introSpeed(progress:number):number;
 export function colorAt(color:string|string[],v:number):number[];

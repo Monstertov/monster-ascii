@@ -100,12 +100,15 @@ export function createRenderer(mask,options={}) {
 /** Intro effects that play once and then hand over to the animation. */
 export const intros=['assemble','rain','scatter','decode','sweep','dissolve'];
 const random=seed=>()=>{seed=seed+0x6d2b79f5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};
+/** Animation speed factor during an intro: eases from 0.3 to exactly 1 at the end, so the animation is already moving while the intro plays and keeps its speed after it. */
+export const introSpeed=progress=>.3+.7*(1-(1-clamp(progress))**3);
 const glyphs='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#$%&*+=<>?';
-/** In-between frame of an intro towards a finished frame. Progress 0 is the start, 1 returns the frame itself. Deterministic for a seed. */
+/** In-between frame of an intro towards a target frame, which may be the live animation. Progress 0 is the start, 1 returns the frame itself.
+ * Every grid cell has its own path and timing from the seed, so a cell keeps its path while the target changes. */
 export function introFrame(frame,name,progress,seed=1) {
   if(!intros.includes(name)) throw new Error('Unknown intro: '+name);
   const p=clamp(progress);if(p>=1) return frame;
-  const {width:w,height:h}=frame,rand=random(seed),chars=Array(w*h).fill(' '),brightness=new Float32Array(w*h),landed=new Uint8Array(w*h);
+  const {width:w,height:h}=frame,cellRandom=(i,k)=>random(Math.imul(seed,0x9e3779b1)+Math.imul(i,3)+k|0)(),chars=Array(w*h).fill(' '),brightness=new Float32Array(w*h),landed=new Uint8Array(w*h);
   const cells=[];let lo=-1,hi=-1;
   frame.chars.forEach((c,i)=>{if(c===' ')return;cells.push(i);if(lo<0||frame.brightness[i]<frame.brightness[lo])lo=i;if(hi<0||frame.brightness[i]>frame.brightness[hi])hi=i;});
   if(!cells.length) return frame;
@@ -114,7 +117,7 @@ export function introFrame(frame,name,progress,seed=1) {
   const local=(delay,span)=>clamp((p-delay*span)/(1-span)),out=q=>1-(1-q)**3,inOut=q=>q<.5?4*q*q*q:1-(2-2*q)**3/2;
   const columns=Array.from({length:w},random(seed^0x5bd1e995)),radius=Math.hypot(w/2,h);
   for(const i of name==='sweep'?frame.chars.keys():cells){
-    const x=i%w,y=(i-x)/w,r=rand(),r2=rand(),r3=rand();
+    const x=i%w,y=(i-x)/w,r=cellRandom(i,0),r2=cellRandom(i,1),r3=cellRandom(i,2);
     if(name==='assemble'){
       // Start on a ring just outside the grid, roughly on the character's own side, so it converges from every edge and corner.
       const a=Math.atan2((y+.5-h/2)*2,x+.5-w/2)+(r2-.5)*2.6,d=radius*(1.08+r3*.5),sx=w/2+Math.cos(a)*d,sy=h/2+Math.sin(a)*d/2,q=out(local(r,.45));
