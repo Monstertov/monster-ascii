@@ -81,6 +81,12 @@ await art.playIntro();          // resolves when the intro is done
 art.playIntro('rain');          // replay with another intro
 ```
 
+In the browser, `introFrom: 'viewport'` makes `assemble` fly in from the edges of the whole browser window instead of the edges of the art's box. The characters are drawn on a temporary fixed canvas above the page (`pointer-events: none`, sharp on high-DPI screens) and land exactly on the cells of the real `pre`, which keeps its place and size and is shown when the canvas is removed. Targets are measured every frame, so scrolling or resizing during the intro still lands on the art. The other intros always play inside the box.
+
+```js
+await mount(el, mask, { intro: 'assemble', introFrom: 'viewport' });
+```
+
 With `autoplayIntro: false` the art stays hidden (`visibility: hidden`, layout kept) until `playIntro` is called. With reduced motion `playIntro` shows the art right away and resolves. In the terminal: `node src/cli.js --intro assemble`.
 
 `introFrame(frame, name, progress, seed)` is the pure function behind it: it takes a finished frame and returns the in-between frame at `progress` from zero to one. Progress one returns the frame itself, and the same seed gives the same frames. Moved characters keep their brightness, so gradient and brightness colors work during the intro. `intros` lists the names.
@@ -131,6 +137,7 @@ A mask has `width`, `height`, and `data` coverage/luminance values from zero to 
 | label | Animated ASCII art | Browser aria-label |
 | intro | none | One of the intros, played once before the animation |
 | introDuration | 2000 | Intro length in milliseconds |
+| introFrom | box | Browser only: `viewport` makes `assemble` fly in from the edges of the browser window |
 | autoplayIntro | true | Browser only: false keeps the art hidden until `playIntro()` |
 
 Effects: `spin3d` rotates a lit solid; `wave` undulates the image; `glitch` scrambles and resolves every four seconds; `scan` sweeps a shimmer line; `breathe` varies size and brightness; `static` holds the image. All accept width, ramp, speed, invert and renderer colors. Per-character color uses brightness to select a gradient stop or grayscale value.
@@ -153,7 +160,7 @@ Node exports `loadImage(file)`, `decodePNG(buffer)`, `ansiFrame(frame,color)` an
 
 `node --test` uses only stdlib: 60 tests cover every rotation mode (frame size, change over time, no NaN, valid rotation matrices), every intro (start away from the final form, exact final frame, same frames for a seed, assemble entering from every side and corner), the M mask, a PNG round trip, the CLI options and the PNG decoder. `node scripts/benchmark.js` measures 300 warmed frames at 80 by 40 on the built-in M mask (128 by 128 pixels). On an Intel Xeon Silver 4210R with Node 20.19.2: spin3d 2.052 ms/frame, wave 0.353, glitch 0.318, scan 0.388, breathe 0.277, static 0.275 (median of five runs). The eight rotation modes of spin3d take 1.761 to 2.014 ms/frame. The 30 fps budget is 33.33 ms. Results vary by hardware and source resolution.
 
-Browser checks use Playwright, a test-only install and not a library dependency. They start their own static server, drive the demo (every rotation, text, columns, font size, ramp, color, background, invert, fps cap, fullscreen, intros, reduced motion), check that `autoplayIntro: false` keeps the art hidden until `playIntro` resolves, load the examples and fail on any console error. Run them with the pinned official image `mcr.microsoft.com/playwright:v1.58.2-noble`, which matches `playwright@1.58.2` ([tag list](https://mcr.microsoft.com/en-us/artifact/mar/playwright/tag/v1.58.2), [Docker source](https://github.com/microsoft/playwright/blob/main/utils/docker/Dockerfile.noble)):
+Browser checks use Playwright, a test-only install and not a library dependency. They start their own static server, drive the demo (every rotation, text, columns, font size, ramp, color, background, invert, fps cap, fullscreen, intros, reduced motion), check that `introFrom: 'viewport'` draws its canvas only while the intro runs, check that `autoplayIntro: false` keeps the art hidden until `playIntro` resolves, load the examples and fail on any console error. Run them with the pinned official image `mcr.microsoft.com/playwright:v1.58.2-noble`, which matches `playwright@1.58.2` ([tag list](https://mcr.microsoft.com/en-us/artifact/mar/playwright/tag/v1.58.2), [Docker source](https://github.com/microsoft/playwright/blob/main/utils/docker/Dockerfile.noble)):
 
 ```sh
 docker run --rm --ipc host -v "$PWD":/work -w /work \
