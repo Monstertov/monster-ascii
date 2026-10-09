@@ -1,5 +1,5 @@
 /** @typedef {{width:number,height:number,data:ArrayLike<number>}} Mask */
-/** @typedef {{width?:number,height?:number,ramp?:string,effect?:string,rotation?:string,speed?:number,depth?:number,tilt?:number,light?:number[],invert?:boolean,color?:string|string[],fps?:number,fontSize?:number|'fit',label?:string}} Options */
+/** @typedef {{width?:number,height?:number,ramp?:string,effect?:string,rotation?:string,speed?:number,depth?:number,tilt?:number,light?:number[],invert?:boolean,color?:string|string[],fps?:number,fontSize?:number|'fit',label?:string,intro?:string|null,introDuration?:number,autoplayIntro?:boolean}} Options */
 export const effects = ['spin3d','wave','glitch','scan','breathe','static'];
 /** Rotation modes of the spin3d effect. */
 export const rotations = ['spinY','spinX','roll','tumble','wobble','flip','orbit','bounce'];
@@ -96,6 +96,45 @@ export function createRenderer(mask,options={}) {
     const chars=Array.from(brightness,v=>ramp[Math.round(clamp(v)*(ramp.length-1))]);
     return {width:w,height:h,brightness,chars,text:Array.from({length:h},(_,y)=>chars.slice(y*w,(y+1)*w).join('')).join('\n')};
   };
+}
+/** Intro effects that play once and then hand over to the animation. */
+export const intros=['assemble','rain','scatter','decode','sweep','dissolve'];
+const random=seed=>()=>{seed=seed+0x6d2b79f5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};
+const glyphs='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#$%&*+=<>?';
+/** In-between frame of an intro towards a finished frame. Progress 0 is the start, 1 returns the frame itself. Deterministic for a seed. */
+export function introFrame(frame,name,progress,seed=1) {
+  if(!intros.includes(name)) throw new Error('Unknown intro: '+name);
+  const p=clamp(progress);if(p>=1) return frame;
+  const {width:w,height:h}=frame,rand=random(seed),chars=Array(w*h).fill(' '),brightness=new Float32Array(w*h),landed=new Uint8Array(w*h);
+  const cells=[];let lo=-1,hi=-1;
+  frame.chars.forEach((c,i)=>{if(c===' ')return;cells.push(i);if(lo<0||frame.brightness[i]<frame.brightness[lo])lo=i;if(hi<0||frame.brightness[i]>frame.brightness[hi])hi=i;});
+  if(!cells.length) return frame;
+  // Landed characters win over ones still in flight.
+  const put=(x,y,i,c=frame.chars[i],b=frame.brightness[i])=>{x=Math.round(x);y=Math.round(y);if(x<0||y<0||x>=w||y>=h)return;const j=y*w+x,fixed=x===i%w&&y===(i-i%w)/w&&c===frame.chars[i];if(landed[j]&&!fixed)return;landed[j]=fixed;chars[j]=c;brightness[j]=b;};
+  const local=(delay,span)=>clamp((p-delay*span)/(1-span)),out=q=>1-(1-q)**3,inOut=q=>q<.5?4*q*q*q:1-(2-2*q)**3/2;
+  const columns=Array.from({length:w},random(seed^0x5bd1e995)),radius=Math.hypot(w/2,h);
+  for(const i of name==='sweep'?frame.chars.keys():cells){
+    const x=i%w,y=(i-x)/w,r=rand(),r2=rand(),r3=rand();
+    if(name==='assemble'){
+      // Start on a ring just outside the grid, roughly on the character's own side, so it converges from every edge and corner.
+      const a=Math.atan2((y+.5-h/2)*2,x+.5-w/2)+(r2-.5)*2.6,d=radius*(1.08+r3*.5),sx=w/2+Math.cos(a)*d,sy=h/2+Math.sin(a)*d/2,q=out(local(r,.45));
+      put(sx+(x-sx)*q,sy+(y-sy)*q,i);
+    } else if(name==='rain'){
+      const q=local(columns[x]*.75+(1-y/h)*.25,.6),sy=-1-r2*h*.4;put(x,sy+(y-sy)*q*q,i);
+    } else if(name==='scatter'){
+      const sx=r2*(w-1),sy=r3*(h-1),q=inOut(local(r,.35));put(sx+(x-sx)*q,sy+(y-sy)*q,i);
+    } else if(name==='decode'){
+      const appear=r*.35,solve=.45+r2*.5;
+      if(p>appear) put(x,y,i,p<solve?glyphs[Math.floor(random(seed^i*7919^Math.floor(p*30))()*glyphs.length)]:frame.chars[i]);
+    } else if(name==='sweep'){
+      // A scan line crosses the whole grid: bright over the art, dim over empty cells.
+      const k=x+y*.6,edge=p*(w+h*.6+3);
+      if(k<edge-3) put(x,y,i);else if(k<edge) put(x,y,i,frame.chars[i]===' '?frame.chars[lo]:frame.chars[hi],frame.chars[i]===' '?frame.brightness[lo]:1);
+    } else {
+      const t=r*.85;if(p>t) put(x,y,i,p<t+.12?frame.chars[lo]:frame.chars[i],p<t+.12?frame.brightness[lo]:frame.brightness[i]);
+    }
+  }
+  return {width:w,height:h,brightness,chars,text:Array.from({length:h},(_,y)=>chars.slice(y*w,(y+1)*w).join('')).join('\n')};
 }
 /** Resolve single, gradient, or brightness colors to RGB. */
 export function colorAt(color,v) {
